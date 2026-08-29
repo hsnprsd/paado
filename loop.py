@@ -1,19 +1,11 @@
-from providers import Model
+from agents import Agent, Runner, set_tracing_disabled
 
-SYSTEM = """\
-Solve the task step by step.
-When you are done, output a single line starting with FINAL: followed by the answer.
-"""
+set_tracing_disabled(True)
 
 
 class Loop:
-    def __init__(self, model: Model):
-        self.model = model
+    def __init__(self, agent: Agent):
+        self.agent = agent
 
     def run(self, task: str) -> str:
-        transcript = f"{SYSTEM}\nTask: {task}"
-        while True:
-            last = self.model.generate(transcript)
-            transcript += f"\n{last}"
-            if "FINAL:" in last:
-                return last.split("FINAL:", 1)[1].strip()
+        return Runner.run_sync(self.agent, task).final_output

@@ -1,39 +1,32 @@
 from typing import Protocol
 
 import requests
+from agents import Agent, AsyncOpenAI, OpenAIChatCompletionsModel
 
 from config import Config
 
 
-class Model(Protocol):
-    def generate(self, prompt: str) -> str: ...
-
-
 class Provider(Protocol):
-    def model(self, name: str) -> Model: ...
+    def model(self, name: str) -> Agent: ...
     def list_available_models(self) -> list[str]: ...
-
-
-class OllamaModel:
-    def __init__(self, name: str, host: str):
-        self.name = name
-        self.host = host
-
-    def generate(self, prompt: str) -> str:
-        resp = requests.post(
-            f"{self.host}/api/generate",
-            json={"model": self.name, "prompt": prompt, "stream": False},
-        )
-        resp.raise_for_status()
-        return resp.json()["response"]
 
 
 class OllamaProvider:
     def __init__(self, config: Config):
         self.host = config.ollama_host.rstrip("/")
 
-    def model(self, name: str) -> OllamaModel:
-        return OllamaModel(name, self.host)
+    def model(self, name: str) -> Agent:
+        return Agent(
+            name="Paado",
+            instructions="Complete the user's task.",
+            model=OpenAIChatCompletionsModel(
+                model=name,
+                openai_client=AsyncOpenAI(
+                    base_url=f"{self.host}/v1",
+                    api_key="ollama",
+                ),
+            ),
+        )
 
     def list_available_models(self) -> list[str]:
         resp = requests.get(f"{self.host}/api/tags")
