@@ -1,0 +1,9 @@
+from typing import Protocol
+
+from agents import Tool
+
+
+class Plugin(Protocol):
+    def tools(self) -> list[Tool]: ...
+    async def start(self) -> None: ...
+    async def close(self) -> None: ...
