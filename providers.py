@@ -17,7 +17,7 @@ class OllamaProvider:
 
     def model(self, name: str) -> Agent:
         return Agent(
-            name="Paado",
+            name="Assistant",
             instructions="Complete the user's task.",
             model=OpenAIChatCompletionsModel(
                 model=name,
