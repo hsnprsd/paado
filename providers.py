@@ -2,6 +2,8 @@ from typing import Protocol
 
 import requests
 
+from config import Config
+
 
 class Model(Protocol):
     def generate(self, prompt: str) -> str: ...
@@ -27,8 +29,8 @@ class OllamaModel:
 
 
 class OllamaProvider:
-    def __init__(self, host: str = "http://127.0.0.1:11434"):
-        self.host = host.rstrip("/")
+    def __init__(self, config: Config):
+        self.host = config.ollama_host.rstrip("/")
 
     def model(self, name: str) -> OllamaModel:
         return OllamaModel(name, self.host)
