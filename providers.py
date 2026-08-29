@@ -1,7 +1,7 @@
 from typing import Protocol
 
 import requests
-from agents import Agent, AsyncOpenAI, OpenAIChatCompletionsModel
+from agents import Agent, AsyncOpenAI, ModelSettings, OpenAIChatCompletionsModel
 
 from config import Config
 
@@ -14,6 +14,7 @@ class Provider(Protocol):
 class OllamaProvider:
     def __init__(self, config: Config):
         self.host = config.ollama_host.rstrip("/")
+        self.context_length = config.context_length
 
     def model(self, name: str) -> Agent:
         return Agent(
@@ -25,6 +26,9 @@ class OllamaProvider:
                     base_url=f"{self.host}/v1",
                     api_key="ollama",
                 ),
+            ),
+            model_settings=ModelSettings(
+                extra_body={"options": {"num_ctx": self.context_length}},
             ),
         )
 
