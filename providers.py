@@ -28,7 +28,8 @@ class OllamaProvider:
                 ),
             ),
             model_settings=ModelSettings(
-                extra_body={"options": {"num_ctx": self.context_length}},
+                include_usage=True,
+                extra_body={"options": {"num_ctx": self.context_length}, "think": True},
             ),
         )
 

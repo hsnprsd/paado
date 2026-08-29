@@ -9,3 +9,6 @@ class Loop:
 
     async def run(self, task: str) -> str:
         return (await Runner.run(self.agent, task)).final_output
+
+    def stream(self, task: str):
+        return Runner.run_streamed(self.agent, task)
