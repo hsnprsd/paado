@@ -48,7 +48,8 @@ class BrowserPlugin:
             """Fill an input, textarea, or contenteditable field.
 
             Replaces any existing value. Does not press Enter or submit the form;
-            call do_click on the submit control afterward if needed.
+            call do_keypress with Enter, or do_click on the submit control, afterward
+            if needed.
 
             Args:
                 selector: CSS selector for the field, e.g. `input[name='search']`
@@ -58,7 +59,20 @@ class BrowserPlugin:
             await browser.do_type(selector, text)
             return "ok"
 
-        return [do_navigate, do_read_html, do_click, do_type]
+        @function_tool
+        async def do_keypress(key: str) -> str:
+            """Press a keyboard key on the focused element.
+
+            Use after do_type to submit a field (Enter) or to move around the page.
+
+            Args:
+                key: Playwright key name, e.g. `Enter`, `Tab`, `Escape`, `ArrowDown`,
+                    `Backspace`, or a shortcut like `Control+A`.
+            """
+            await browser.do_keypress(key)
+            return "ok"
+
+        return [do_navigate, do_read_html, do_click, do_type, do_keypress]
 
     async def start(self):
         await self.browser.start()

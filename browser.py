@@ -26,6 +26,9 @@ class BrowserSession:
     async def do_type(self, selector: str, text: str):
         await self.page.fill(selector, text)
 
+    async def do_keypress(self, key: str):
+        await self.page.keyboard.press(key)
+
     async def close(self):
         await self.browser.close()
         await self._playwright.stop()
