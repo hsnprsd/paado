@@ -75,10 +75,10 @@ async def run(args: argparse.Namespace) -> None:
 
 async def _run_task(paado: Paado, task: str, context_length: int) -> None:
     result = Loop(paado.agent).stream(task)
-    display = _RunDisplay()
+    display = _RunDisplay(context_length, result.context_wrapper)
     async for event in result.stream_events():
         display.handle(event)
-    display.finish(result.final_output, result.context_wrapper.usage, context_length)
+    display.finish(result.final_output)
 
 
 async def _repl(paado: Paado, context_length: int) -> None:
@@ -96,7 +96,9 @@ async def _repl(paado: Paado, context_length: int) -> None:
 
 
 class _RunDisplay:
-    def __init__(self):
+    def __init__(self, context_length: int, context_wrapper):
+        self._context_length = context_length
+        self._context_wrapper = context_wrapper
         self._need_nl = False
         self._thinking = False
 
@@ -108,16 +110,21 @@ class _RunDisplay:
                 self._thinking_delta(delta)
             return
         if isinstance(event, RunItemStreamEvent):
-            if event.name == "tool_called":
+            if event.name == "reasoning_item_created":
+                self._end_thinking()
+            elif event.name == "tool_called":
+                self._end_thinking()
                 self._tool_called(event.item)
             elif event.name == "tool_output":
                 self._tool_output(event.item.output)
+            elif event.name == "message_output_created":
+                self._end_thinking()
 
-    def finish(self, final_output, usage, context_length: int) -> None:
-        self._break()
+    def finish(self, final_output) -> None:
+        self._end_thinking()
         if final_output:
             console.print(Markdown(str(final_output)))
-        console.print(f"[dim]{_format_tokens(usage, context_length)}[/]")
+        self._print_usage()
 
     def _thinking_delta(self, delta: str) -> None:
         if not self._thinking:
@@ -127,8 +134,14 @@ class _RunDisplay:
         console.print(delta, end="", style="dim italic", markup=False, highlight=False)
         self._need_nl = True
 
-    def _tool_called(self, item) -> None:
+    def _end_thinking(self) -> None:
+        if not self._thinking:
+            return
         self._thinking = False
+        self._break()
+        self._print_usage()
+
+    def _tool_called(self, item) -> None:
         self._break()
         name = getattr(item, "tool_name", None) or "tool"
         args = _format_tool_args(item)
@@ -137,13 +150,18 @@ class _RunDisplay:
             console.print(args, style="dim", markup=False, highlight=False)
 
     def _tool_output(self, output) -> None:
-        self._thinking = False
         self._break()
         text = " ".join(str(output).split())
         if len(text) > _OUTPUT_MAX:
             text = text[:_OUTPUT_MAX] + "…"
         console.print("← ", style="dim", end="")
         console.print(text, style="dim", markup=False, highlight=False)
+        self._print_usage()
+
+    def _print_usage(self) -> None:
+        console.print(
+            f"[dim]{_format_tokens(self._context_wrapper.usage, self._context_length)}[/]"
+        )
 
     def _break(self) -> None:
         if self._need_nl:
