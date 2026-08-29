@@ -13,7 +13,16 @@ class TerminalPlugin:
 
         @function_tool
         async def do_exec(script: str) -> str:
-            """Execute a bash script and return its output and exit code."""
+            """Run a bash script and return its output.
+
+            Starts a fresh bash process each call (working directory and environment
+            do not persist). The process is killed after 60 seconds. The result is
+            combined stdout/stderr, then a final line `exit code: N`.
+
+            Args:
+                script: Bash source to run, e.g. `ls -la` or a multi-line script.
+                    Do not wrap it in `bash -c`; it is already executed with bash.
+            """
             return await terminal.do_exec(script)
 
         return [do_exec]

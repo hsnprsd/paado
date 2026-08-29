@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 import sys
 
 from agents.stream_events import RawResponsesStreamEvent, RunItemStreamEvent
@@ -130,7 +131,7 @@ class _RunDisplay:
         self._thinking = False
         self._break()
         name = getattr(item, "tool_name", None) or "tool"
-        args = _tool_args(item)
+        args = _format_tool_args(item)
         console.print(f"[cyan]→ {name}[/]", end=" " if args else "\n")
         if args:
             console.print(args, style="dim", markup=False, highlight=False)
@@ -150,11 +151,21 @@ class _RunDisplay:
             self._need_nl = False
 
 
-def _tool_args(item) -> str:
+def _format_tool_args(item) -> str:
     raw = getattr(item, "raw_item", None)
     if isinstance(raw, dict):
-        return raw.get("arguments") or ""
-    return getattr(raw, "arguments", None) or ""
+        payload = raw.get("arguments") or ""
+    else:
+        payload = getattr(raw, "arguments", None) or ""
+    if not payload:
+        return ""
+    try:
+        parsed = json.loads(payload)
+    except (TypeError, json.JSONDecodeError):
+        return str(payload)
+    if isinstance(parsed, dict):
+        return " ".join(f"{key}={value}" for key, value in parsed.items())
+    return str(payload)
 
 
 def _format_tokens(usage, context_length: int) -> str:
