@@ -1,6 +1,19 @@
+from datetime import datetime
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
 from agents import Agent
+from jinja2 import Template
 
 from plugins import Plugin
+
+SYSTEM_PROMPT = Path(__file__).with_name("prompts").joinpath("paado.md").read_text()
+
+
+def render_system_prompt() -> str:
+    return Template(SYSTEM_PROMPT).render(
+        current_date=datetime.now(tz=ZoneInfo("Asia/Tehran")).date().isoformat()
+    )
 
 
 class Paado:
@@ -8,9 +21,7 @@ class Paado:
         self.plugins = plugins
         self.agent = agent.clone(
             name="Paado",
-            instructions=(
-                "You are Paado. Complete the user's task."
-            ),
+            instructions=render_system_prompt(),
             tools=[tool for plugin in plugins for tool in plugin.tools()],
             mcp_servers=[server for plugin in plugins for server in plugin.mcp_servers()],
         )
