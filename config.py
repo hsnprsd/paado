@@ -45,9 +45,12 @@ def default_mcp_servers() -> dict[str, MCPServerConfig]:
 
 class Config(BaseSettings):
     ollama_host: str = "http://127.0.0.1:11434"
-    model: str = "gemma4:12b"
-    context_length: int = 64 * 1024
+    model: str
+    context_length: int = 256 * 1024
     thinking_effort: Literal["none", "low", "medium", "high"] = "low"
     mcp_servers: dict[str, MCPServerConfig] = Field(
         default_factory=default_mcp_servers
     )
+
+def load_config() -> Config:
+    return Config.model_validate_json(Path("config.json").read_text())

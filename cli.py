@@ -9,7 +9,7 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.prompt import Prompt
 
-from config import Config
+from config import load_config
 from loop import Loop
 from paado import Paado
 from plugins.mcp import MCPPlugin
@@ -40,7 +40,7 @@ def main() -> None:
 
 
 async def run(args: argparse.Namespace) -> None:
-    config = Config()
+    config = load_config()
     provider = OllamaProvider(config)
     model = args.model or config.model
     paado = Paado(

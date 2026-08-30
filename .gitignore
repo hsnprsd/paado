@@ -11,3 +11,6 @@ wheels/
 
 # Playwright MCP
 .playwright-mcp/
+
+# Configuration
+config.json
