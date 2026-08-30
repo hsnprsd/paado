@@ -36,6 +36,10 @@ MCPServerConfig = StdioMCPServerConfig | HttpMCPServerConfig | SseMCPServerConfi
 
 def default_mcp_servers() -> dict[str, MCPServerConfig]:
     return {
+        "filesystem": StdioMCPServerConfig(
+            command="npx",
+            args=["-y", "@modelcontextprotocol/server-filesystem@latest", "/"],
+        ),
         "playwright": StdioMCPServerConfig(
             command="npx",
             args=["@playwright/mcp@latest", "--headless"],
@@ -51,6 +55,7 @@ class Config(BaseSettings):
     mcp_servers: dict[str, MCPServerConfig] = Field(
         default_factory=default_mcp_servers
     )
+
 
 def load_config() -> Config:
     return Config.model_validate_json(Path("config.json").read_text())
