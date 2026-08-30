@@ -15,6 +15,7 @@ class OllamaProvider:
     def __init__(self, config: Config):
         self.host = config.ollama_host.rstrip("/")
         self.context_length = config.context_length
+        self.thinking_effort = config.thinking_effort
 
     def model(self, name: str) -> Agent:
         return Agent(
@@ -29,7 +30,12 @@ class OllamaProvider:
             ),
             model_settings=ModelSettings(
                 include_usage=True,
-                extra_body={"options": {"num_ctx": self.context_length}, "think": True},
+                extra_body={
+                    "options": {"num_ctx": self.context_length},
+                    "think": (
+                        False if self.thinking_effort == "none" else self.thinking_effort
+                    ),
+                },
             ),
         )
 
