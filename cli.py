@@ -28,9 +28,7 @@ _OUTPUT_MAX = 200
 def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="paado", description="Paado agent")
     parser.add_argument("-m", "--model", help="Model name")
-    parser.add_argument("--list-models", action="store_true", help="List available models")
     parser.add_argument("--headless", action="store_true", help="Run Chrome headless")
-    parser.add_argument("task", nargs="*", help="Task to run (interactive if omitted)")
     return parser.parse_args(argv)
 
 
@@ -46,17 +44,7 @@ def main() -> None:
 async def run(args: argparse.Namespace) -> None:
     config = Config(**({"chrome_headless": True} if args.headless else {}))
     provider = OllamaProvider(config)
-    models = provider.list_available_models()
-    if not models:
-        console.print("[red]No Ollama models available.[/red]")
-        raise SystemExit(1)
-
-    if args.list_models:
-        for name in models:
-            console.print(name)
-        return
-
-    model = args.model or models[0]
+    model = args.model or config.model
     paado = Paado(
         provider.model(model),
         plugins=[BrowserPlugin(config), TerminalPlugin(config)],
@@ -64,41 +52,37 @@ async def run(args: argparse.Namespace) -> None:
     console.print(Panel.fit(f"[bold]Paado[/bold]\n[dim]{model}[/dim]"))
     await paado.start()
     try:
-        task = " ".join(args.task).strip()
-        if task:
-            await _run_task(paado, task, config.context_length)
-            return
-        await _repl(paado, config.context_length)
+        await _repl(paado.agent)
     finally:
         await paado.close()
 
 
-async def _run_task(paado: Paado, task: str, context_length: int) -> None:
-    result = Loop(paado.agent).stream(task)
-    display = _RunDisplay(context_length, result.context_wrapper)
+async def _run_task(
+    loop: Loop,
+    task: str,
+) -> None:
+    result = loop.stream(task)
+    display = _RunDisplay()
     async for event in result.stream_events():
         display.handle(event)
     display.finish(result.final_output)
 
 
-async def _repl(paado: Paado, context_length: int) -> None:
+async def _repl(agent) -> None:
     while True:
-        try:
-            task = Prompt.ask("[bold cyan]paado[/]").strip()
-        except EOFError:
-            console.print()
-            return
-        if not task:
-            continue
-        if task.lower() in {"exit", "quit", "q"}:
-            return
-        await _run_task(paado, task, context_length)
+        async with Loop(agent) as loop:
+            while True:
+                task = Prompt.ask("[bold cyan]paado[/]")
+                if task == "/quit":
+                    return
+                if task == "/clear":
+                    console.print("[dim]Started a new session.[/]")
+                    break
+                await _run_task(loop, task)
 
 
 class _RunDisplay:
-    def __init__(self, context_length: int, context_wrapper):
-        self._context_length = context_length
-        self._context_wrapper = context_wrapper
+    def __init__(self):
         self._need_nl = False
         self._thinking = False
 
@@ -124,7 +108,6 @@ class _RunDisplay:
         self._end_thinking()
         if final_output:
             console.print(Markdown(str(final_output)))
-        self._print_usage()
 
     def _thinking_delta(self, delta: str) -> None:
         if not self._thinking:
@@ -139,7 +122,6 @@ class _RunDisplay:
             return
         self._thinking = False
         self._break()
-        self._print_usage()
 
     def _tool_called(self, item) -> None:
         self._break()
@@ -156,11 +138,6 @@ class _RunDisplay:
             text = text[:_OUTPUT_MAX] + "…"
         console.print("← ", style="dim", end="")
         console.print(text, style="dim", markup=False, highlight=False)
-
-    def _print_usage(self) -> None:
-        console.print(
-            f"[dim]{_format_tokens(self._context_wrapper.usage, self._context_length)}[/]"
-        )
 
     def _break(self) -> None:
         if self._need_nl:
@@ -183,12 +160,6 @@ def _format_tool_args(item) -> str:
     if isinstance(parsed, dict):
         return " ".join(f"{key}={value}" for key, value in parsed.items())
     return str(payload)
-
-
-def _format_tokens(usage, context_length: int) -> str:
-    used = usage.total_tokens
-    pct = (used / context_length * 100) if context_length else 0
-    return f"{used:,} / {context_length:,} tokens ({pct:.0f}%)"
 
 
 if __name__ == "__main__":
