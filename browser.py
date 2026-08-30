@@ -1,4 +1,7 @@
-from playwright.async_api import Browser, Playwright, async_playwright
+from os import environ
+import os
+
+from agents.mcp import MCPServerStdio, MCPServerStdioParams
 
 from config import Config
 
@@ -6,29 +9,22 @@ from config import Config
 class BrowserSession:
     def __init__(self, config: Config):
         self._config = config
+        args = ["@playwright/mcp@latest"]
+        if config.chrome_headless:
+            args.append("--headless")
+        args.append("--extension")
+        args.append(f"--executable-path={config.chrome_path}")
+
+        self.server = MCPServerStdio(
+            MCPServerStdioParams(
+                command="npx",
+                args=args,
+            ),
+            client_session_timeout_seconds=30,
+        )
 
     async def start(self):
-        self._playwright: Playwright = await async_playwright().start()
-        self.browser: Browser = await self._playwright.chromium.launch(
-            executable_path=self._config.chrome_path, headless=self._config.chrome_headless
-        )
-        self.page = await self.browser.new_page()
-
-    async def do_navigate(self, url: str):
-        await self.page.goto(url, wait_until="networkidle")
-
-    async def do_read_html(self) -> str:
-        return await self.page.content()
-
-    async def do_click(self, selector: str):
-        await self.page.click(selector)
-
-    async def do_type(self, selector: str, text: str):
-        await self.page.fill(selector, text)
-
-    async def do_keypress(self, key: str):
-        await self.page.keyboard.press(key)
+        await self.server.connect()
 
     async def close(self):
-        await self.browser.close()
-        await self._playwright.stop()
+        await self.server.cleanup()

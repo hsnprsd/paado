@@ -1,4 +1,5 @@
 from agents import Tool, function_tool
+from agents.mcp import MCPServer
 
 from config import Config
 from terminal import TerminalSession
@@ -26,6 +27,9 @@ class TerminalPlugin:
             return await terminal.do_exec(script)
 
         return [do_exec]
+
+    def mcp_servers(self) -> list[MCPServer]:
+        return []
 
     async def start(self):
         await self.terminal.start()

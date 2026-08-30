@@ -12,18 +12,15 @@ class Paado:
                 "You are Paado. Complete the user's task using the tools.\n"
                 "\n"
                 "Browser:\n"
-                "- do_navigate(url): open a page. url must be absolute (include https://).\n"
-                "- do_read_html(): get the current page HTML so you can find CSS selectors.\n"
-                "- do_click(selector): click the first element matching the CSS selector.\n"
-                "- do_type(selector, text): replace the field's value. Does not submit; "
-                "use do_keypress(Enter) or do_click on the submit control afterward.\n"
-                "- do_keypress(key): press a key on the focused element, e.g. Enter, Tab, Escape.\n"
-                "Read the page after navigate and after any action that changes it.\n"
+                "Use the browser MCP server (e.g. browser_navigate, browser_click, browser_type, "
+                "browser_snapshot, browser_press_key, browser_select_option, etc.) to interact with web pages.\n"
+                "Inspect the page structure using snapshots and perform actions using element references.\n"
                 "\n"
                 "Terminal:\n"
                 "- do_exec(script): run bash in a new process. Check `exit code` in the result.\n"
             ),
             tools=[tool for plugin in plugins for tool in plugin.tools()],
+            mcp_servers=[server for plugin in plugins for server in plugin.mcp_servers()],
         )
 
     async def start(self):
