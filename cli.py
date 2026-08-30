@@ -12,8 +12,7 @@ from rich.prompt import Prompt
 from config import Config
 from loop import Loop
 from paado import Paado
-from plugins.browser import BrowserPlugin
-from plugins.terminal import TerminalPlugin
+from plugins.mcp import MCPPlugin
 from providers import OllamaProvider
 
 console = Console()
@@ -28,7 +27,6 @@ _OUTPUT_MAX = 200
 def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="paado", description="Paado agent")
     parser.add_argument("-m", "--model", help="Model name")
-    parser.add_argument("--headless", action="store_true", help="Run Chrome headless")
     return parser.parse_args(argv)
 
 
@@ -42,12 +40,14 @@ def main() -> None:
 
 
 async def run(args: argparse.Namespace) -> None:
-    config = Config(**({"chrome_headless": True} if args.headless else {}))
+    config = Config()
     provider = OllamaProvider(config)
     model = args.model or config.model
     paado = Paado(
         provider.model(model),
-        plugins=[BrowserPlugin(config), TerminalPlugin(config)],
+        plugins=[
+            MCPPlugin(config.mcp_servers),
+        ],
     )
     console.print(Panel.fit(f"[bold]Paado[/bold]\n[dim]{model}[/dim]"))
     await paado.start()
