@@ -26,7 +26,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["cli", "config", "loop", "paado", "providers", "browser", "terminal"]
+py-modules = ["cli", "config", "loop", "paado", "providers"]
 packages = ["plugins"]
 
 [tool.pytest.ini_options]

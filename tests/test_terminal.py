@@ -3,9 +3,8 @@ import asyncio
 from config import Config
 from loop import Loop
 from paado import Paado
-from plugins.terminal import TerminalPlugin
+from plugins.terminal import TerminalPlugin, TerminalSession
 from providers import OllamaProvider
-from terminal import TerminalSession
 
 
 def test_terminal_exec():
