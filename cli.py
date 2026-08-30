@@ -156,7 +156,6 @@ class _RunDisplay:
             text = text[:_OUTPUT_MAX] + "…"
         console.print("← ", style="dim", end="")
         console.print(text, style="dim", markup=False, highlight=False)
-        self._print_usage()
 
     def _print_usage(self) -> None:
         console.print(
@@ -187,11 +186,7 @@ def _format_tool_args(item) -> str:
 
 
 def _format_tokens(usage, context_length: int) -> str:
-    if usage.request_usage_entries:
-        last = usage.request_usage_entries[-1]
-        used = last.total_tokens
-    else:
-        used = usage.total_tokens
+    used = usage.total_tokens
     pct = (used / context_length * 100) if context_length else 0
     return f"{used:,} / {context_length:,} tokens ({pct:.0f}%)"
 
